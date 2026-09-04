@@ -1,6 +1,7 @@
 # 🚀 B2B Fintech Real-Time Churn Engine
  
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/ShivenSiwach/fintech-realtime-churn-engine)
+[![CI](https://github.com/ShivenSiwach/fintech-realtime-churn-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/ShivenSiwach/fintech-realtime-churn-engine/actions/workflows/ci.yml)
 ![Python Version](https://img.shields.io/badge/python-3.11-blue.svg)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.110.0-009688.svg?logo=fastapi&logoColor=white)
 ![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?logo=docker&logoColor=white)
@@ -52,6 +53,8 @@ This service acts as an **in-line event evaluator** that scores every card-swipe
 - **Scikit-Learn / Joblib** — real-time risk probability scoring (Random Forest classifier)
 - **Pydantic** — strict schema validation to prevent corrupt financial telemetry from reaching the model
 - **Docker / DevContainers** — fully containerized for one-click cloud deployment
+**Current scaling limitation:** this is a single-instance service with the model loaded in-memory on startup — there's no request queue, batching, or horizontal scaling yet. That's fine for a demo and for moderate webhook volume behind a load balancer with multiple replicas, but a production deployment at Mynt's actual transaction volume would need either autoscaled replicas behind a shared model store, or a batched inference layer, depending on real traffic patterns.
+ 
 ---
  
 ## 📈 3. Model & Data
@@ -208,13 +211,71 @@ Ingests real-time transaction event data, validates types via Pydantic, and retu
 - `200 OK` — Successful inference evaluation.
 - `422 Unprocessable Entity` — Invalid JSON payload structure or value constraint violations.
 - `503 Service Unavailable` — ML model artifact is missing or not loaded.
+**`200 OK` example:**
+```json
+{
+  "sme_id": "sme_stockholm_041",
+  "transaction_id": "tx_se_88219",
+  "churn_risk_score": 0.974,
+  "risk_level": "CRITICAL",
+  "action_required": true,
+  "summary": "High churn signal: Severe drop in transaction velocity and sync failures."
+}
+```
+ 
+**`422 Unprocessable Entity` example** — missing required field (`weekly_transaction_count`):
+```json
+{
+  "detail": [
+    {
+      "type": "missing",
+      "loc": ["body", "weekly_transaction_count"],
+      "msg": "Field required"
+    }
+  ]
+}
+```
+ 
+**`422 Unprocessable Entity` example** — value outside declared bounds (`receipt_upload_ratio: 1.5`, but schema requires `≤ 1.0`):
+```json
+{
+  "detail": [
+    {
+      "type": "less_than_equal",
+      "loc": ["body", "receipt_upload_ratio"],
+      "msg": "Input should be less than or equal to 1"
+    }
+  ]
+}
+```
+ 
+**`503 Service Unavailable` example** — model artifact missing at boot:
+```json
+{
+  "detail": "Model artifact not found. Please train model first."
+}
+```
+ 
+### Latency
+ 
+Benchmarked in-process (FastAPI `TestClient`, 200 sequential requests, single instance, warm model already loaded — no network hop):
+ 
+| Percentile | Latency |
+| --- | --- |
+| Mean | 4.4ms |
+| Median | 4.3ms |
+| p95 | 5.0ms |
+| p99 | 5.8ms |
+ 
+This measures inference + validation overhead only, not real network latency — over an actual HTTP connection (webhook → load balancer → service), expect single-digit milliseconds added on top depending on network path. The **<15ms** claim in the intro holds comfortably at this model size, but hasn't been benchmarked yet under concurrent load or with a real network hop, both of which belong in the Roadmap once this moves past demo stage.
+ 
 ---
  
 ## 🧪 9. Testing
  
 [#-9-testing](#-9-testing)
  
-The webhook endpoint is covered by `pytest` cases for valid payloads, schema-validation failures, and the model-unavailable path.
+The webhook endpoint is covered by `pytest` cases for valid payloads, schema-validation failures, and the model-unavailable path. Every push and pull request to `main` runs the full suite via GitHub Actions (`.github/workflows/ci.yml`) — model generation, evaluation, and tests, in that order.
  
 ```
 # Install dev dependencies (includes a compatible httpx pin — see requirements-dev.txt)
