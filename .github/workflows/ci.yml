@@ -1,1 +1,34 @@
-
+name: CI
+ 
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+ 
+jobs:
+  test:
+    runs-on: ubuntu-latest
+ 
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+ 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+ 
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+ 
+      - name: Generate model artifact
+        run: python data/generate_mock_data.py
+ 
+      - name: Run evaluation (sanity check on held-out metrics)
+        run: python data/evaluate_model.py
+ 
+      - name: Run test suite
+        run: pytest tests/ -v
+ 
