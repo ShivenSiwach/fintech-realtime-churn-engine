@@ -53,7 +53,32 @@ This service acts as an **in-line event evaluator** that scores every card-swipe
 - **Docker / DevContainers** — fully containerized for one-click cloud deployment
 
 ---
+## 📈 Model & Data
 
+[#-model--data](#-model--data)
+
+**⚠️ Synthetic data disclosure:** this model is trained on synthetically generated telemetry (`data/generate_mock_data.py`), not real Mynt or customer data. It exists to demonstrate the inference architecture and feature engineering approach — not to make production churn claims. The feature relationships (declining transaction velocity, dropping receipt compliance, rising ERP sync errors → churn) are hand-modeled from the domain narrative above, then a Random Forest is trained to recover that signal.
+
+**Held-out test performance** (80/20 split, stratified, `random_state=42` — reproducible via `python data/evaluate_model.py`):
+
+| Metric | Score |
+|---|---|
+| Precision (churned) | 0.885 |
+| Recall (churned) | 0.622 |
+| F1 (churned) | 0.730 |
+| ROC-AUC | 0.990 |
+
+Base rate: ~7.4% of accounts churn in the synthetic set, so this is a class-imbalanced problem — precision/recall on the minority class matter more than raw accuracy (which is a misleading 97%).
+
+**Risk band calibration** — checking whether the `CRITICAL` / `ELEVATED` / `LOW` thresholds in the Risk Evaluation Engine actually track real risk on the test set:
+
+| Band | Threshold | Accounts | Actual churn rate in band |
+|---|---|---|---|
+| CRITICAL | score ≥ 0.70 | 37 | 94.6% |
+| ELEVATED | 0.40 ≤ score < 0.70 | 27 | 70.4% |
+| LOW | score < 0.40 | 936 | 2.1% |
+
+The bands are well-separated on synthetic data, which validates the threshold design — but recall of 0.62 means roughly a third of true churners are being under-scored. On real data, that recall gap is where I'd want to prioritize feature work.
 ## 📂 3. Project Structure
 
 ```
