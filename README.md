@@ -227,6 +227,18 @@ pytest tests/ -v
  
 ---
  
+## 🗺️ 10. Roadmap
+ 
+[#-10-roadmap](#-10-roadmap)
+ 
+This service currently ships a single, statically trained model artifact — good enough to demonstrate the inference architecture, but not how you'd want to run churn scoring in production. The natural next step is applying the same pattern from my Automated Continuous Training (CT) pipeline project to this service:
+ 
+- **Drift detection**: a KS-test module comparing incoming `weekly_transaction_count` / `receipt_upload_ratio` / `erp_sync_errors` distributions against the training baseline, flagging when live SME behavior has drifted from what the model was trained on.
+- **Automated retraining trigger**: a branch/gate step (Airflow or GitHub Actions) that kicks off retraining only when drift crosses a threshold, rather than on a blind schedule.
+- **Blue/Green redeployment**: swap traffic to a newly retrained model with zero downtime once it clears a promotion gate (e.g. an MLflow-tracked comparison against the currently serving model), rather than manually replacing `model/churn_model.pkl`.
+- **Real feature validation**: replacing the synthetic training data (see [Model & Data](#-3-model--data)) with real telemetry once available, and re-running the eval script to confirm the risk-band calibration still holds.
+---
+ 
 ## 📄 License
  
 This project is open-source under the MIT License.
