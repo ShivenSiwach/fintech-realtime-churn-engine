@@ -8,6 +8,8 @@
  
 An event-driven machine learning inference microservice designed to evaluate SME churn risk and accounting ERP sync health in real-time from corporate card transaction telemetry.
  
+> **Why this project exists:** I built this as a targeted concept piece for **[Mynt](https://www.mynt.com/en)**, a Stockholm-based B2B corporate card and expense platform. Rather than a generic churn-prediction demo, every design choice here — the feature set (card velocity, receipt compliance, ERP sync health), the Fortnox/Visma/Xero references, the SEK-denominated payloads — is modeled on Mynt's actual product surface. It's a working demonstration of how I'd approach real-time churn risk scoring for their SME customer base, and an open invitation to talk.
+ 
 ---
  
 ## 📌 1. Business Problem & Domain Context
@@ -245,5 +247,5 @@ This project is open-source under the MIT License.
  
 ---
  
-*Developed by Shiven Siwach | Independent ML Engineer*
- 
+*Built by Shiven Siwach — Final-year M.Sc. Data Science & Machine Learning student.*
+*Open to connecting: [GitHub](https://github.com/ShivenSiwach) · [LinkedIn](https://linkedin.com/in/shivensiwach)*
