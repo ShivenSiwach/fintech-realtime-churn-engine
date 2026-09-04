@@ -55,7 +55,7 @@ This service acts as an **in-line event evaluator** that scores every card-swipe
 ---
 ## 📈 Model & Data
 
-[#-model--data](#-model--data)
+[#-model--data]
 
 **⚠️ Synthetic data disclosure:** this model is trained on synthetically generated telemetry (`data/generate_mock_data.py`), not real Mynt or customer data. It exists to demonstrate the inference architecture and feature engineering approach — not to make production churn claims. The feature relationships (declining transaction velocity, dropping receipt compliance, rising ERP sync errors → churn) are hand-modeled from the domain narrative above, then a Random Forest is trained to recover that signal.
 
