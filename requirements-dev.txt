@@ -1,1 +1,5 @@
-
+-r requirements.txt
+pytest==8.1.1
+# Pinned below 0.28: newer httpx removed the `app=` shortcut that this
+# starlette/fastapi version's TestClient relies on.
+httpx<0.28
